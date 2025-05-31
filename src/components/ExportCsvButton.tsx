@@ -3,7 +3,10 @@ import React, { useState } from "react";
 import Toast from "./Toast";
 
 export default function ExportCsvButton({ exportUrl }: { exportUrl: string }) {
-  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
 
   async function handleExport() {
     try {
@@ -22,6 +25,7 @@ export default function ExportCsvButton({ exportUrl }: { exportUrl: string }) {
 
       setToast({ message: "Export successful!", type: "success" });
     } catch (e) {
+      console.error("Export error:", e);
       setToast({ message: "Export failed.", type: "error" });
     }
   }
