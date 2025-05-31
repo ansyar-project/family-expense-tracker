@@ -1,0 +1,181 @@
+SYSTEM DESIGN DOCUMENT: FAMILY MONTHLY FINANCIAL TRACKER
+=========================================================
+
+🧾 OVERVIEW
+-----------
+A web-based application that helps families collaboratively track and visualize their monthly financial cash flow (income & expenses). The system uses SQLite and Prisma for local-first data management, with Next.js App Router and Server Actions for full-stack capabilities.
+
+🛠️ TECH STACK
+-------------
+Frontend       : Next.js (App Router)
+Backend        : Next.js Server Actions
+Database       : SQLite (via Prisma)
+Styling/UI     : Tailwind CSS
+Charts         : Recharts or Chart.js
+Authentication : NextAuth.js (optional)
+Deployment     : Vercel / Railway (with PostgreSQL if scaling)
+
+🧩 CORE FEATURES
+----------------
+- User registration & login (optional auth)
+- Add income/expense entries
+- Select or add new categories
+- Select or add places for expenses
+- Dashboard with:
+  - Current month's outcome
+  - Monthly outcome to date
+  - Highest spending entry this month
+  - Highest spending entry all time
+- Category-based and time-based filtering
+- Data stored locally via SQLite
+
+🧱 DATABASE SCHEMA (PRISMA)
+---------------------------
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  entries   Entry[]
+  createdAt DateTime @default(now())
+}
+
+model Category {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  entries   Entry[]
+  createdAt DateTime @default(now())
+}
+
+model Place {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  entries   Entry[]
+  createdAt DateTime @default(now())
+}
+
+model Entry {
+  id          String     @id @default(uuid())
+  userId      String
+  user        User       @relation(fields: [userId], references: [id])
+  type        EntryType
+  amount      Float
+  categoryId  String
+  category    Category   @relation(fields: [categoryId], references: [id])
+  placeId     String?
+  place       Place?     @relation(fields: [placeId], references: [id])
+  description String?
+  date        DateTime
+  createdAt   DateTime   @default(now())
+}
+
+enum EntryType {
+  INCOME
+  EXPENSE
+}
+
+⚙️ ARCHITECTURE
+--------------
+Browser (Next.js frontend)
+  ↓
+UI Components (Forms, Tables, Charts)
+  ↓
+Server Actions (CRUD operations)
+  ↓
+Prisma ORM
+  ↓
+SQLite Database
+
+📁 FOLDER STRUCTURE
+-------------------
+/src
+  /app
+    /dashboard
+      page.tsx
+    /login
+      page.tsx
+    /api (optional)
+  /components
+    EntryForm.tsx
+    SummaryCard.tsx
+    DashboardCharts.tsx
+  /lib
+    actions.ts           # Server actions here (moved from /app/dashboard)
+    prisma.ts
+    utils.ts
+  /prisma
+    schema.prisma
+    seed.ts
+  /styles
+    globals.css
+
+✅ SERVER ACTION EXAMPLES
+-------------------------
+addEntry:
+- Creates a new income or expense entry
+- Accepts or creates category and place if not exist
+
+getMonthlyStats:
+- Returns:
+  - Total outcome this month
+  - Monthly outcome to date
+  - Highest spending (entry) this month
+  - Highest spending (entry) all time
+
+📊 DASHBOARD VIEW
+-----------------
+- Current Month's Outcome: [Total]
+- Monthly Outcome to Date: [Per category or date]
+- Highest Spending Entry (This Month): [Entry details]
+- Highest Spending Entry (All Time): [Entry details]
+- Pie Chart: Category-wise spending
+- Bar Chart: Monthly cash flow over time
+- Recent Entries Table
+
+🌱 SEED SCRIPT EXAMPLE
+----------------------
+import { prisma } from '../lib/prisma';
+
+async function main() {
+  const user = await prisma.user.create({
+    data: { name: 'Admin', email: 'admin@example.com' }
+  });
+
+  const salary = await prisma.category.create({ data: { name: 'Salary' } });
+  const groceries = await prisma.category.create({ data: { name: 'Groceries' } });
+  const market = await prisma.place.create({ data: { name: 'Supermarket' } });
+
+  await prisma.entry.createMany({
+    data: [
+      {
+        userId: user.id,
+        type: 'INCOME',
+        amount: 5000,
+        categoryId: salary.id,
+        date: new Date('2025-05-01'),
+      },
+      {
+        userId: user.id,
+        type: 'EXPENSE',
+        amount: 1000,
+        categoryId: groceries.id,
+        placeId: market.id,
+        date: new Date('2025-05-02'),
+      },
+    ],
+  });
+}
+main();
+
+📤 DEPLOYMENT NOTES
+-------------------
+- SQLite is great for local use and prototyping.
+- For production: convert to PostgreSQL for cloud (Vercel/Railway).
+- Use environment variable: DATABASE_URL
+
+📈 FUTURE ENHANCEMENTS
+----------------------
+- Budget tracking per category
+- Recurring transactions
+- Mobile support (PWA)
+- Data export to CSV or PDF
+- Multi-family or shared tracking

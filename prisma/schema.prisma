@@ -1,0 +1,51 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  entries   Entry[]
+  createdAt DateTime @default(now())
+}
+
+model Category {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  entries   Entry[]
+  createdAt DateTime @default(now())
+}
+
+model Place {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  entries   Entry[]
+  createdAt DateTime @default(now())
+}
+
+model Entry {
+  id          String     @id @default(uuid())
+  userId      String
+  user        User       @relation(fields: [userId], references: [id])
+  type        EntryType
+  amount      Float
+  categoryId  String
+  category    Category   @relation(fields: [categoryId], references: [id])
+  placeId     String?
+  place       Place?     @relation(fields: [placeId], references: [id])
+  description String?
+  date        DateTime
+  createdAt   DateTime   @default(now())
+}
+
+enum EntryType {
+  INCOME
+  EXPENSE
+}
