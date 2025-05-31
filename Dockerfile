@@ -39,4 +39,4 @@ COPY --from=builder /app/package.json ./package.json
 EXPOSE 3000
 
 # Run migrations and seed before starting the app
-CMD ["sh", "-c", "pnpm prisma migrate deploy && pnpm prisma db seed && pnpm start"]
+CMD ["sh", "-c", "pnpm prisma migrate deploy && pnpm start"]
