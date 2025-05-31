@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://family-expense-tracker.ansyar-world.top/sitemap.xml

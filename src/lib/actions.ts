@@ -465,3 +465,49 @@ export async function deleteEntry(entryId: string) {
     where: { id: entryId },
   });
 }
+
+// Export entries to CSV
+export async function exportEntriesToCSV(
+  userId: string,
+  filters?: {
+    categoryId?: string;
+    placeId?: string;
+    month?: string;
+    year?: string;
+  }
+) {
+  const where: Prisma.EntryWhereInput = { userId };
+  if (filters?.categoryId) where.categoryId = filters.categoryId;
+  if (filters?.placeId) where.placeId = filters.placeId;
+
+  // Month & Year filter logic
+  if (filters?.month) {
+    const year = filters?.year ? Number(filters.year) : new Date().getFullYear();
+    const monthNum = Number(filters.month);
+    const start = new Date(year, monthNum - 1, 1);
+    const end = new Date(year, monthNum, 1);
+    where.date = { gte: start, lt: end };
+  } else if (filters?.year) {
+    const year = Number(filters.year);
+    const start = new Date(year, 0, 1);
+    const end = new Date(year + 1, 0, 1);
+    where.date = { gte: start, lt: end };
+  }
+
+  const entries = await prisma.entry.findMany({
+    where,
+    include: { category: true, place: true },
+    orderBy: { date: "desc" },
+  });
+
+  // CSV header
+  let csv = "Date,Type,Amount,Category,Place,Description\n";
+  csv += entries
+    .map(
+      (e) =>
+        `"${e.date.toISOString().slice(0, 10)}","${e.type}",${e.amount},"${e.category?.name || ""}","${e.place?.name || ""}","${e.description || ""}"`
+    )
+    .join("\n");
+
+  return csv;
+}
