@@ -119,12 +119,16 @@ const Dashboard = async ({ searchParams }: { searchParams?: Promise<{ categoryId
           <h2 className="text-base md:text-lg font-semibold mb-2 flex items-center gap-2">
             <FaChartPie /> Category-wise Spending
           </h2>
-          <PieChartComponent
-            data={stats.categoryWiseSpending.map(item => ({
-              name: item.categoryName,
-              value: item._sum.amount ?? 0,
-            }))}
-          />
+          {stats.categoryWiseSpending.length > 0 ? (
+            <PieChartComponent
+              data={stats.categoryWiseSpending.map(item => ({
+                name: item.categoryName,
+                value: item._sum.amount ?? 0,
+              }))}
+            />
+          ) : (
+            <div className="text-gray-400 text-center py-8">No data to display</div>
+          )}
         </div>
         <div className="bg-gray-800 rounded-lg p-4 lg:col-span-2 min-w-0">
           <h2 className="text-base md:text-lg font-semibold mb-2 flex items-center gap-2">
