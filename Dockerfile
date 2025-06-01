@@ -25,7 +25,7 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN apk add --no-cache curl && corepack enable && corepack prepare pnpm@latest --activate
 
 # Copy Prisma schema, migrations, and SQLite DB (if present)
 COPY --from=builder /app/prisma ./prisma
