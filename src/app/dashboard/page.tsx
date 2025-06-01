@@ -83,7 +83,7 @@ const Dashboard = async ({ searchParams }: { searchParams?: Promise<{ categoryId
         </div>
         <div className="min-w-0">
           <SummaryCard
-            title="Monthly Spending to Date"
+            title="This Month's Spending to Date"
             value={stats.monthlyOutcomeToDate
               .reduce((sum, item) => sum + (item._sum.amount ?? 0), 0)
               .toLocaleString("en-AU", { style: "currency", currency: "AUD" })}
