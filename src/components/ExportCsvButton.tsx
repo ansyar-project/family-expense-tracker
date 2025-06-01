@@ -22,6 +22,7 @@ export default function ExportCsvButton({ exportUrl }: { exportUrl: string }) {
 
       setToast({ message: "Export successful!", type: "success" });
     } catch (e) {
+      console.error("Export failed:", e);
       setToast({ message: "Export failed.", type: "error" });
     }
   }

@@ -2,11 +2,10 @@
 import { prisma } from "@/lib/prisma";
 import { startOfMonth, endOfMonth } from "date-fns";
 import { format } from "date-fns";
-import { Prisma } from "@prisma/client";
+import { Prisma, EntryType } from "@prisma/client";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { revalidatePath } from "next/cache";
-import { ro } from "date-fns/locale";
 
 // Fetch summary data for a user
 export async function getSummary(
@@ -523,36 +522,24 @@ export async function exportEntriesToCSV(
 }
 
 // Import entries from CSV
-export async function importEntries(rows: any[]) {
+export async function importEntries(rows: Record<string, string>[]) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return { success: false };
 
-  console.log(rows);
-
-  function clean(val: any) {
+  function clean(val: string | undefined): string | undefined {
     if (typeof val !== "string") return val;
-    // Remove BOM, trim, and outer quotes
     let s = val.replace(/^\uFEFF/, "").trim();
-
-    // Remove wrapping quotes (single or double)
     if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
       s = s.slice(1, -1);
     }
-
-    // Replace double double-quotes with single double-quote (Excel style)
     s = s.replace(/""/g, '"');
-
-    // Remove trailing commas (Excel sometimes leaves a comma at the end)
     s = s.replace(/,+$/, "");
-
-    // If the result is empty or just double quotes, treat as undefined
     if (s === "" || s === '""') return undefined;
-
     return s;
   }
 
   try {
-    for (const row of rows) {
+    for (const row of rows as Record<string, string>[]) {
       // Defensive: handle BOM, whitespace, Excel quirks, and extra quotes
       const DateVal = clean(row.Date) || clean(row["\uFEFFDate"]);
       const TypeVal = clean(row.Type);
@@ -591,7 +578,7 @@ export async function importEntries(rows: any[]) {
         data: {
           userId: session.user.id,
           date: new Date(DateVal),
-          type: TypeVal,
+          type: TypeVal as EntryType,
           amount: Number(AmountVal),
           categoryId: category.id,
           placeId,
@@ -601,7 +588,8 @@ export async function importEntries(rows: any[]) {
     }
     revalidatePath("/dashboard/entries");
     return { success: true };
-  } catch (e) {
+  } catch (error) {
+    console.error("Error importing entries:", error);
     return { success: false };
   }
 }

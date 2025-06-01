@@ -25,7 +25,7 @@ export default function ImportCsvModal({
       skipEmptyLines: true,
       transformHeader: (header) => header.trim().replace(/^\uFEFF/, ""), // Remove BOM and trim
       complete: async (results) => {
-        let cleanedRows = results.data;
+        const cleanedRows = results.data;
 
         // Detect Excel-mangled CSV: only one key per row, and that key contains commas
         if (
@@ -40,20 +40,23 @@ export default function ImportCsvModal({
             complete: async (arrayResults) => {
               const rawRows = arrayResults.data as string[][];
               // Parse every row string (including header) with PapaParse
-              const parsedRows = rawRows.map((row) =>
+              const parsedRows: string[][] = rawRows.map((row) =>
                 typeof row[0] === "string"
-                  ? Papa.parse(row[0], { header: false }).data[0]
-                  : row
+                  ? (Papa.parse(row[0], { header: false }).data[0] as string[])
+                  : (row as string[])
               );
               const [headerRow, ...dataRows] = parsedRows;
-              const cleanedRows = dataRows.map((row: any[]) =>
-                headerRow.reduce((acc: any, key: string, idx: number) => {
-                  acc[key.trim().replace(/^\uFEFF/, "")] =
-                    typeof row[idx] === "string"
-                      ? row[idx].trim().replace(/^"|"$/g, "")
-                      : row[idx];
-                  return acc;
-                }, {})
+              const cleanedRows: Record<string, string>[] = dataRows.map((row) =>
+                headerRow.reduce(
+                  (acc: Record<string, string>, key: string, idx: number) => {
+                    acc[key.trim().replace(/^\uFEFF/, "")] =
+                      typeof row[idx] === "string"
+                        ? row[idx].trim().replace(/^"|"$/g, "")
+                        : String(row[idx] ?? "");
+                    return acc;
+                  },
+                  {}
+                )
               );
               // Now cleanedRows is in the correct format
               const res = await importEntries(cleanedRows);

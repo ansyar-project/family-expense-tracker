@@ -6,7 +6,6 @@ import DashboardFilterBar from "@/components/DashboardFilterBar";
 import EntryList from "@/components/EntryList";
 import ExportCsvButton from "@/components/ExportCsvButton";
 import ImportCsvButton from "@/components/ImportCsvButton";
-import { ToastProvider } from "@/components/ToastContext";
 import Toast from "@/components/Toast";
 
 export default async function EntriesPage({
