@@ -124,7 +124,7 @@ export async function addEntry(data: {
     placeId = place.id;
   }
 
-  // revalidatePath("/dashboard/add");
+  revalidatePath("/dashboard/add");
 
   // Create the entry
   return prisma.entry.create({
