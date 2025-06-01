@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { editEntry, deleteEntry, getCategories, getPlaces } from "@/lib/actions";
+// import { format } from "date-fns"; // Uncomment if you want to use date-fns
 
 export interface Entry {
   id: string;
@@ -39,8 +40,6 @@ const EntryList: React.FC<EntryListProps> = ({ entries }) => {
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<{ name: string }[]>([]);
   const [places, setPlaces] = useState<{ name: string }[]>([]);
-  // const [newCategory, setNewCategory] = useState("");
-  // const [newPlace, setNewPlace] = useState("");
   const [showNewCategory, setShowNewCategory] = useState(false);
   const [showNewPlace, setShowNewPlace] = useState(false);
 
@@ -89,6 +88,14 @@ const EntryList: React.FC<EntryListProps> = ({ entries }) => {
     window.location.reload(); // Or trigger a re-fetch if using SWR/React Query
   };
 
+  // Always use a fixed date format to avoid hydration errors
+  function formatDate(dateString: string) {
+    // Option 1: Use date-fns for formatting
+    // return format(new Date(dateString), "yyyy-MM-dd");
+    // Option 2: Use toISOString and slice
+    return new Date(dateString).toISOString().slice(0, 10);
+  }
+
   return (
     <div className="overflow-x-auto mt-8">
       <table className="min-w-full bg-gray-800 rounded-lg">
@@ -114,7 +121,7 @@ const EntryList: React.FC<EntryListProps> = ({ entries }) => {
             entries.map((entry) => (
               <tr key={entry.id} className="border-t border-gray-700">
                 <td className="px-4 py-2">
-                  {new Date(entry.date).toLocaleDateString()}
+                  {formatDate(entry.date)}
                 </td>
                 <td className="px-4 py-2">
                   <span
@@ -130,9 +137,9 @@ const EntryList: React.FC<EntryListProps> = ({ entries }) => {
                 <td className="px-4 py-2">{entry.category?.name}</td>
                 <td className="px-4 py-2">
                   {entry.type === "EXPENSE" ? "-" : "+"}
-                  {entry.amount.toLocaleString(undefined, {
+                  {entry.amount.toLocaleString("en-AU", {
                     style: "currency",
-                    currency: "USD",
+                    currency: "AUD",
                   })}
                 </td>
                 <td className="px-4 py-2">{entry.place?.name || "-"}</td>

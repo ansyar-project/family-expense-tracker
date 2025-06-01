@@ -3,6 +3,10 @@ import { prisma } from "@/lib/prisma";
 import { startOfMonth, endOfMonth } from "date-fns";
 import { format } from "date-fns";
 import { Prisma } from "@prisma/client";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/authOptions";
+import { revalidatePath } from "next/cache";
+import { ro } from "date-fns/locale";
 
 // Fetch summary data for a user
 export async function getSummary(
@@ -120,6 +124,8 @@ export async function addEntry(data: {
     }
     placeId = place.id;
   }
+
+  // revalidatePath("/dashboard/add");
 
   // Create the entry
   return prisma.entry.create({
@@ -482,7 +488,9 @@ export async function exportEntriesToCSV(
 
   // Month & Year filter logic
   if (filters?.month) {
-    const year = filters?.year ? Number(filters.year) : new Date().getFullYear();
+    const year = filters?.year
+      ? Number(filters.year)
+      : new Date().getFullYear();
     const monthNum = Number(filters.month);
     const start = new Date(year, monthNum - 1, 1);
     const end = new Date(year, monthNum, 1);
@@ -505,9 +513,95 @@ export async function exportEntriesToCSV(
   csv += entries
     .map(
       (e) =>
-        `"${e.date.toISOString().slice(0, 10)}","${e.type}",${e.amount},"${e.category?.name || ""}","${e.place?.name || ""}","${e.description || ""}"`
+        `"${e.date.toISOString().slice(0, 10)}","${e.type}",${e.amount},"${
+          e.category?.name || ""
+        }","${e.place?.name || ""}","${e.description || ""}"`
     )
     .join("\n");
 
   return csv;
+}
+
+// Import entries from CSV
+export async function importEntries(rows: any[]) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) return { success: false };
+
+  console.log(rows);
+
+  function clean(val: any) {
+    if (typeof val !== "string") return val;
+    // Remove BOM, trim, and outer quotes
+    let s = val.replace(/^\uFEFF/, "").trim();
+
+    // Remove wrapping quotes (single or double)
+    if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
+      s = s.slice(1, -1);
+    }
+
+    // Replace double double-quotes with single double-quote (Excel style)
+    s = s.replace(/""/g, '"');
+
+    // Remove trailing commas (Excel sometimes leaves a comma at the end)
+    s = s.replace(/,+$/, "");
+
+    // If the result is empty or just double quotes, treat as undefined
+    if (s === "" || s === '""') return undefined;
+
+    return s;
+  }
+
+  try {
+    for (const row of rows) {
+      // Defensive: handle BOM, whitespace, Excel quirks, and extra quotes
+      const DateVal = clean(row.Date) || clean(row["\uFEFFDate"]);
+      const TypeVal = clean(row.Type);
+      const AmountVal = clean(row.Amount);
+      const CategoryVal = clean(row.Category);
+      const PlaceVal = clean(row.Place);
+      const DescriptionVal = clean(row.Description);
+
+      if (!DateVal || !TypeVal || !AmountVal || !CategoryVal) continue;
+
+      // Find or create category
+      let category = await prisma.category.findUnique({
+        where: { name: CategoryVal },
+      });
+      if (!category) {
+        category = await prisma.category.create({
+          data: { name: CategoryVal },
+        });
+      }
+
+      // Find or create place if provided
+      let placeId: string | undefined = undefined;
+      if (PlaceVal) {
+        let place = await prisma.place.findUnique({
+          where: { name: PlaceVal },
+        });
+        if (!place) {
+          place = await prisma.place.create({
+            data: { name: PlaceVal },
+          });
+        }
+        placeId = place.id;
+      }
+
+      await prisma.entry.create({
+        data: {
+          userId: session.user.id,
+          date: new Date(DateVal),
+          type: TypeVal,
+          amount: Number(AmountVal),
+          categoryId: category.id,
+          placeId,
+          description: DescriptionVal || "",
+        },
+      });
+    }
+    revalidatePath("/dashboard/entries");
+    return { success: true };
+  } catch (e) {
+    return { success: false };
+  }
 }

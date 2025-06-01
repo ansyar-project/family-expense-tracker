@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { addEntry } from "@/lib/actions";
-import { useRouter } from "next/navigation";
+// import { useRouter } from "next/navigation";
 import { FaMoneyBillWave, FaTags, FaMapMarkerAlt, FaCalendarAlt, FaStickyNote } from "react-icons/fa";
+import { useToast } from "./ToastContext"; // Use the toast context
 
 export default function AddEntryForm({ userId, categories, places }: {
   userId: string;
@@ -20,7 +21,7 @@ export default function AddEntryForm({ userId, categories, places }: {
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const router = useRouter();
+  const { setToast } = useToast(); // <-- Use setToast from context
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -36,10 +37,18 @@ export default function AddEntryForm({ userId, categories, places }: {
         date: new Date(date),
         description,
       });
-      router.push("/dashboard");
+      setToast({ message: "Entry added successfully!", type: "success" }); // <-- show toast
+      setAmount("");
+      setCategoryName(categories[0]?.name || "");
+      setDate(new Date().toISOString().slice(0, 10));
+      setDescription("");
+      setNewCategory("");
+      setPlaceName(places[0]?.name || "");
+      setNewPlace("");
     } catch (err) {
       console.error("Failed to add entry:", err);
       setError("Failed to add entry.");
+      setToast({ message: "Failed to add entry.", type: "error" }); // <-- show error toast
     }
     setLoading(false);
   }

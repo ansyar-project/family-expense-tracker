@@ -5,6 +5,9 @@ import { getCategories, getPlaces, getPaginatedEntries } from "@/lib/actions";
 import DashboardFilterBar from "@/components/DashboardFilterBar";
 import EntryList from "@/components/EntryList";
 import ExportCsvButton from "@/components/ExportCsvButton";
+import ImportCsvButton from "@/components/ImportCsvButton";
+import { ToastProvider } from "@/components/ToastContext";
+import Toast from "@/components/Toast";
 
 export default async function EntriesPage({
   searchParams,
@@ -49,36 +52,41 @@ export default async function EntriesPage({
   }
 
   return (
-    <main className="min-h-screen p-8 bg-gray-900 text-gray-100">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-        <h1 className="text-2xl font-bold mb-6">All Entries</h1>
-        <ExportCsvButton exportUrl={buildExportUrl()} />
-      </div>
-      <DashboardFilterBar
-        categories={categories}
-        places={places}
-        initial={filters}
-        basePath="/dashboard/entries"
-      />
-
-      {/* Entry List */}
-      <EntryList
-        entries={entries.map((entry) => ({
-          ...entry,
-          date:
-            entry.date instanceof Date ? entry.date.toISOString() : entry.date,
-        }))}
-      />
-
-      {/* Pagination */}
-      <div className="flex gap-2 mt-6">
-        <Pagination
-          currentPage={page}
-          totalPages={totalPages}
-          filters={filters}
+    
+      <main className="min-h-screen p-8 bg-gray-900 text-gray-100">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+          <h1 className="text-2xl font-bold mb-6">All Entries</h1>
+          <div className="flex gap-2 w-full md:w-auto justify-end">
+            <ImportCsvButton />
+            <ExportCsvButton exportUrl={buildExportUrl()} />
+          </div>
+        </div>
+        <DashboardFilterBar
+          categories={categories}
+          places={places}
+          initial={filters}
+          basePath="/dashboard/entries"
         />
-      </div>
-    </main>
+
+        {/* Entry List */}
+        <EntryList
+          entries={entries.map((entry) => ({
+            ...entry,
+            date:
+              entry.date instanceof Date ? entry.date.toISOString() : entry.date,
+          }))}
+        />
+
+        {/* Pagination */}
+        <div className="flex gap-2 mt-6">
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            filters={filters}
+          />
+        </div>
+        <Toast />
+      </main>
   );
 }
 

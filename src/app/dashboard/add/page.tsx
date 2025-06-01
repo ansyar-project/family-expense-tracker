@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/authOptions";
 import { prisma } from "@/lib/prisma";
 import AddEntryForm from "@/components/AddEntryForm";
+import Toast from "@/components/Toast";
 
 export default async function AddEntryPage() {
   const session = await getServerSession(authOptions);
@@ -24,6 +25,7 @@ export default async function AddEntryPage() {
           places={places}
         />
       </div>
+      <Toast />
     </div>
   );
 }
